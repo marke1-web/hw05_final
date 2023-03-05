@@ -16,7 +16,7 @@ def index(request):
 
 @login_required
 def post_create(request):
-    form = PostForm(request.POST or None)
+    form = PostForm(request.POST or None, files=request.FILES or None)
     if form.is_valid():
         post = form.save(commit=False)
         post.author = request.user
@@ -56,14 +56,14 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     post_list = author.posts.all()
     page_obj = pagin(request, post_list)
-    follow = (request.user.is_authenticated and author != request.user
-              and Follow.objects.filter(
-                  author=author,
-                  user=request.user).exists())
+    follow = (
+        Follow.objects.filter(author=author, user=request.user).exists()
+        and author != request.user
+    )
     context = {
         "author": author,
         "page_obj": page_obj,
-        'following': follow,
+        "following": follow,
     }
     return render(request, "posts/profile.html", context)
 
@@ -123,18 +123,19 @@ def profile_follow(request, username):
 
 @login_required
 def profile_unfollow(request, username):
-    get_object_or_404(Follow, user=request.user,
-                      author__username=username).delete()
-    return redirect('posts:profile', username=username)
+    get_object_or_404(
+        Follow, user=request.user, author__username=username
+    ).delete()
+    return redirect("posts:profile", username=username)
 
 
 @login_required
 def post_delete(request, post_id):
     post = get_object_or_404(Post, pk=post_id)
     if post.author != request.user:
-        return redirect('posts:post_detail', post_id)
+        return redirect("posts:post_detail", post_id)
     post.delete()
-    return redirect('posts:index')
+    return redirect("posts:index")
 
 
 @login_required
@@ -142,6 +143,6 @@ def comment_delete(request, comment_id):
     comment = get_object_or_404(Comment, pk=comment_id)
     post_id = comment.post.id
     if comment.author != request.user:
-        return redirect('posts:post_detail', comment_id)
+        return redirect("posts:post_detail", comment_id)
     comment.delete()
-    return redirect('posts:post_detail', post_id)
+    return redirect("posts:post_detail", post_id)
