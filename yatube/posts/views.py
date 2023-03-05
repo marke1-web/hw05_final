@@ -56,10 +56,12 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     post_list = author.posts.all()
     page_obj = pagin(request, post_list)
-    follow = (
-        Follow.objects.filter(author=author, user=request.user).exists()
-        and author != request.user
-    )
+    follow = request.user.is_authenticated
+    if follow:
+        follow = (
+            Follow.objects.filter(author=author, user=request.user).exists()
+            and author != request.user
+        )
     context = {
         "author": author,
         "page_obj": page_obj,
